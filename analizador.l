@@ -5,19 +5,49 @@
  *                                           *
  * ---- Programa principal: analizador ----  *
  *===========================================*/
+
+/* ##### Cabeceras de bibliotecas ##### */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "pila.h"
+
+/* ##### Definiciones ##### */
 
 #define MENSAJE_EMTERO(base) printf("Se ha encontrado el entero %ld que estaba en base %d\n",\
         strtol(yytext, NULL, (base)), (base))
+#define GUARDAR_AMBOS(_tipo) guardar_token(yytext, guardar_simbolo(yytext), (_tipo))
+
+#define ARCHIVO_TABLA_SIMBOLOS "tabla_simbolos.dat"
+#define ARCHIVO_TABLA_TOKENS   "tabla_tokens.dat"
+
+enum clase_token {
+    PALABRA_RESERVADA, IDENTIFICADOR,
+    NUMERO_ENTERO, NUMERO_REAL,
+    OPERADOR_ARITMETICO, OPERADOR_LOGICO,
+    OPERADOR_RELACIONAL, OPERADOR_BIT_A_BIT,
+    OPERADOR_INCREMENTO, OPERADOR_ASIGNACION,
+    CADENA, CARACTER, SIMBOLO_ESPECIAL
+};
+
+struct token {
+    enum clase_token clase;
+
+    union {
+        int numero_simbolo;
+        char *lexema;
+    };
+};
 
 /* ##### Prototipos de función ###### */
-static void guardar_secuencia(char * secuencia);
+static int guardar_simbolo(char * simbolo);
+static void guardar_token(char * simbolo, int posicion, enum clase_token clase);
+static void crear_tablas(void);
+static int comparar_cadena(const void * cad1, const void * cad2);
 
 /* ##### Variables de conteo y memoria ##### */
 static Pila * pilaTokens;
-static Pila * pilaIdentificadores;
+static Pila * pilaSimbolos;
 
 static int numero_lineas = 1;
 
@@ -68,38 +98,38 @@ static int numero_lineas = 1;
 
 %}
 
-digito              [0-9]
-letra               [A-Za-zßÄÖÜäöü]
-identificador       (_|{letra})(_|{letra}|{digito})*
-cadena              "({letra}|{digito}|[_ \t]|\\n)*"
-caracter            ('{letra}')
+digito [0-9]
+letra [A-Za-zßÄÖÜäöü]
+identificador (_|{letra})(_|{letra}|{digito})*
+cadena "({letra}|{digito}|[_ \t]|\\n)*"
+caracter ('{letra}')
 palabra_reservada (Ganzzahlig|Glepktpunkt|Charakter|whährend|für|ob|sonst|wechsein|gehen|fortsetzen|unterbrechen|zurückkehrem|Struktur|Union|Aufzählung|Typdefinition)
-caracter_especial   "("|")"|"["|"]"|"{"|"}"|","|":"|";"
+caracter_especial "("|")"|"["|"]"|"{"|"}"|","|":"|";"
 
-signo       (\+|-)?
-int_sufijo  u?(l|L){0,2}|(l|L){0,2}u
-flt_sufijo  f?
+signo (\+|-)?
+int_sufijo u?(l|L){0,2}|(l|L){0,2}u
+flt_sufijo f?
 
-int_bin     {signo}0b[0-1]+{int_sufijo}
-int_octal   {signo}0[0-7]+{int_sufijo}
+int_bin {signo}0b[0-1]+{int_sufijo}
+int_octal {signo}0[0-7]+{int_sufijo}
 int_decimal {signo}([1-9]{digito}*|0){int_sufijo}
-int_hexa    {signo}0x[0-9A-Fa-f]+{int_sufijo}
+int_hexa {signo}0x[0-9A-Fa-f]+{int_sufijo}
 
-flt_cuerpo  ({digito}+(\.{digito}*)?|\.{digito}+)
+flt_cuerpo ({digito}+(\.{digito}*)?|\.{digito}+)
 flt_decimal {signo}{flt_cuerpo}{flt_sufijo}
-flt_exp     {signo}({flt_cuerpo}|[0-9]+)e{signo}[0-9]+{flt_sufijo}
+flt_exp {signo}({flt_cuerpo}|[0-9]+)e{signo}[0-9]+{flt_sufijo}
 
-op_aritmetico   "+"|"-"|"*"|"/"
-op_logico       "&&"|"||"|"!"
-op_bit          "&"|"|"|"^"|"<<"|">>"
-op_incdec       "++"|"--"
-op_asignacion   {op_aritmetico}=
-op_relacional   "=="|"<"|">"|"<="|">="
+op_aritmetico "+"|"-"|"*"|"/"
+op_logico "&&"|"||"|"!"
+op_bit "&"|"|"|"^"|"<<"|">>"
+op_incdec "++"|"--"
+op_asignacion {op_aritmetico}=
+op_relacional "=="|"<"|">"|"<="|">="
 
 err_cadena \".*
 err_numero ({int_decimal}|{int_octal}|{int_hexa}){letra}+
 
-espacio     [ \t]
+espacio [ \t]
 salto_linea \n
 
 %option noyywrap
@@ -108,36 +138,37 @@ salto_linea \n
                 printf("Se encontró un comentario: %s\n", yytext); }
 {salto_linea}       { numero_lineas++; }
 
-{cadena}            { guardar_secuencia(yytext);
-                      printf("Se encontró una cadena: %s\n", yytext); }
-{caracter}          { guardar_secuencia(yytext);
-                      printf("Se encontró un caracter: %s\n", yytext); }
-{palabra_reservada} { guardar_secuencia(yytext);
-                       printf("Se encontró una palabra reservada: %s\n", yytext); }
-{identificador}     { guardar_secuencia(yytext);
-                      printf("Se encontró un identificador: %s\n", yytext); }
-{caracter_especial} { guardar_secuencia(yytext);
-                      printf("Se encontro el caracter especial \"%s\"\n", yytext); }
+{cadena}            { printf("Se encontró una cadena: %s\n", yytext);
+                      GUARDAR_AMBOS(CADENA); }
+{caracter}          { printf("Se encontró un caracter: %s\n", yytext);
+                      GUARDAR_AMBOS(CARACTER);}
 
-{int_bin}           { guardar_secuencia(yytext); MENSAJE_EMTERO(2); }
-{int_octal}         { guardar_secuencia(yytext); MENSAJE_EMTERO(8); }
-{int_decimal}       { guardar_secuencia(yytext); MENSAJE_EMTERO(10); }
-{int_hexa}          { guardar_secuencia(yytext); MENSAJE_EMTERO(16); }
-{flt_decimal}|{flt_exp} { guardar_secuencia(yytext);
-                          printf("Se encontró un flotante: %f\n", atof(yytext)); }
+{palabra_reservada} { printf("Se encontró una palabra reservada: %s\n", yytext);
+                      GUARDAR_AMBOS(PALABRA_RESERVADA); }
+{identificador}     { printf("Se encontró un identificador: %s\n", yytext);
+                      GUARDAR_AMBOS(IDENTIFICADOR); }
+{caracter_especial} { printf("Se encontro el simbolo especial \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, SIMBOLO_ESPECIAL); }
 
-{op_aritmetico}     { guardar_secuencia(yytext);
-                      printf("Se encontró el operador aritmético: \"%s\"\n", yytext); }
-{op_logico}         { guardar_secuencia(yytext);
-                      printf("Se encontró el operador lógico: \"%s\"\n", yytext); }
-{op_bit}            { guardar_secuencia(yytext);
-                      printf("Se encontró el operador bit a bit: \"%s\"\n", yytext); }
-{op_incdec}         { guardar_secuencia(yytext);
-                      printf("Se encontró el operador incremental: \"%s\"\n", yytext); }
-{op_asignacion}     { guardar_secuencia(yytext);
-                      printf("Se encontró el operador de asignación: \"%s\"\n", yytext); }
-{op_relacional}     { guardar_secuencia(yytext);
-                      printf("Se encontró el operador relacional: \"%s\"\n", yytext); }
+{int_bin}           { MENSAJE_EMTERO(2);  GUARDAR_AMBOS(NUMERO_ENTERO); }
+{int_octal}         { MENSAJE_EMTERO(8);  GUARDAR_AMBOS(NUMERO_ENTERO); }
+{int_decimal}       { MENSAJE_EMTERO(10); GUARDAR_AMBOS(NUMERO_ENTERO); }
+{int_hexa}          { MENSAJE_EMTERO(16); GUARDAR_AMBOS(NUMERO_ENTERO); }
+{flt_decimal}|{flt_exp} { printf("Se encontró un flotante: %f\n", atof(yytext));
+                          GUARDAR_AMBOS(NUMERO_REAL); }
+
+{op_aritmetico}     { printf("Se encontró el operador aritmético: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_ARITMETICO); }
+{op_logico}         { printf("Se encontró el operador lógico: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_LOGICO); }
+{op_bit}            { printf("Se encontró el operador bit a bit: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_BIT_A_BIT); }
+{op_incdec}         { printf("Se encontró el operador incremental: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_INCREMENTO); }
+{op_asignacion}     { printf("Se encontró el operador de asignación: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_ASIGNACION); }
+{op_relacional}     { printf("Se encontró el operador relacional: \"%s\"\n", yytext);
+                      guardar_token(yytext, -1, OPERADOR_RELACIONAL); }
 
 {espacio}+          { /* Con los espacios en blanco no se hace nada */ }
 
@@ -146,26 +177,7 @@ salto_linea \n
 
 %%
 
-void guardar_secuencia (char * secuencia)
-{
-
-}
-
-void crear_tabla (char *cad)
-{
-    char carac[100];
-    FILE *table;
-    table = fopen("tabla1.txt", "a");
-
-    if (table == NULL) {
-        perror("Error");
-    } else {
-        fprintf( table, "%s\n", cad );
-        fclose(table);
-    }
-}
-
-int main (int argc, const char *argv[])
+int main(int argc, const char *argv[])
 {
 
     if ( argc > 1 ) {
@@ -176,8 +188,8 @@ int main (int argc, const char *argv[])
             exit(EXIT_FAILURE);
         }
 
-        pilaTokens          = Pila_Nueva();
-        pilaIdentificadores = Pila_Nueva();
+        pilaTokens   = Pila_Nueva();
+        pilaSimbolos = Pila_Nueva();
 
     } else {
         fprintf(stderr, "No se recibió el nombre del archivo\n");
@@ -186,5 +198,94 @@ int main (int argc, const char *argv[])
 
     yylex();    // Se llama al analizador
 
-    return EXIT_SUCCESS;
+    crear_tablas();
+
+    Pila_Borrar(pilaTokens);
+    Pila_Borrar(pilaSimbolos);
 }
+
+static int guardar_simbolo(char * simbolo)
+{
+    int posicion = Pila_ObtenerPosicion(pilaSimbolos, simbolo, comparar_cadena);
+
+    if ( posicion == -1 ) {
+        Pila_Insertar(pilaSimbolos, simbolo);
+        return pilaSimbolos->tope;
+    }
+
+    return posicion;
+}
+
+static void guardar_token(char * secuencia, int posicion, enum clase_token clase)
+{
+    struct token * nuevo_token = malloc(sizeof(struct token));
+
+    nuevo_token->clase = clase;
+
+    if ( posicion == -1 ) {
+        nuevo_token->lexema = secuencia;
+    } else {
+        nuevo_token->numero_simbolo = posicion;
+    }
+
+    Pila_Insertar(pilaTokens, nuevo_token);
+}
+
+static void crear_tablas(void)
+{
+    FILE * archivo = NULL;
+
+    // Creando la tabla de símbolos
+    archivo = fopen(ARCHIVO_TABLA_SIMBOLOS, "w");
+
+    if (archivo == NULL) {
+        perror("Error");
+        return;
+    }
+
+    for (int pos = 0; pos <= pilaSimbolos->tope; pos++) {
+        fprintf(archivo, "%s\n",
+                (char *) pilaSimbolos->elementos[pos]);
+    }
+
+    // Creando la tabla de tokens
+    archivo = fopen(ARCHIVO_TABLA_TOKENS, "w");
+
+    if ( archivo == NULL ) {
+        perror("Error");
+        return;
+    }
+
+    for (int pos = 0; pos <= (pilaTokens->tope); pos++) {
+        struct token * actual = pilaTokens->elementos[pos];
+
+        switch ( actual->clase ) {
+            case PALABRA_RESERVADA:
+            case IDENTIFICADOR:
+            case NUMERO_ENTERO:
+            case NUMERO_REAL:
+            case CADENA:
+            case CARACTER: {
+                fprintf(archivo, "%d\t%d\n",
+                        actual->clase, actual->numero_simbolo);
+            } break;
+
+            case OPERADOR_ARITMETICO:
+            case OPERADOR_LOGICO:
+            case OPERADOR_RELACIONAL:
+            case OPERADOR_BIT_A_BIT:
+            case OPERADOR_INCREMENTO:
+            case OPERADOR_ASIGNACION:
+            case SIMBOLO_ESPECIAL: {
+                fprintf(archivo, "%d\t%s\n",
+                        actual->clase, (char *)actual->lexema);
+            } break;
+        }
+    }
+}
+
+static int comparar_cadena(const void * cad1, const void * cad2)
+{
+    return strcmp(cad1, cad2);
+}
+

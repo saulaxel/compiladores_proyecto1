@@ -8,19 +8,19 @@ CC = gcc
 FC = flex
 
 # Banderas
-CFLAGS = -std=gnu11 -Wall -Wextra -O3
+CFLAGS = -std=gnu11 -Wall -Wextra -O3 -Wno-unused-parameters -Wno-sign-compare -Wno-unused-function -I.
 
-analizador: analizador_lex.yy.o pila.o
-	$(CC) -o $@ $< $(CFLAGS)
+analizador: salida_compilacion/analizador_lex.yy.o salida_compilacion/pila.o
+	$(CC) -o $@ $^ $(CFLAGS)
 
-analizador_lex.yy.o: analizador_lex.yy.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+salida_compilacion/analizador_lex.yy.o: salida_compilacion/analizador_lex.yy.c
+	$(CC) -c -o $@ $^ $(CFLAGS)
 
-pila.o: pila.c pila.h
-	$(CC) -c -o $@ pila.c
+salida_compilacion/pila.o: pila.c pila.h
+	$(CC) -c -o $@ pila.c $(CFLAGS)
 
-analizador_lex.yy.c: analizador.l
-	$(FC) -o $@ $<
+salida_compilacion/analizador_lex.yy.c: analizador.l
+	$(FC) -o $@ $^
 
 clean:
-	rm *.o *.yy.c
+	rm salida_compilacion/*.yy.c salida_compilacion/*.o analizador

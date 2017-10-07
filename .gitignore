@@ -1,4 +1,4 @@
 *.exe
 *.out
-lex.yy.c
-
+output
+analizador
