@@ -708,6 +708,7 @@ static int guardar_simbolo(char * simbolo);
 static void guardar_token(char * simbolo, int posicion, enum clase_token clase);
 static void crear_tablas(void);
 static int comparar_cadena(const void * cad1, const void * cad2);
+static void recontar_lineas(char * comentario);
 static void liberarToken(void * token);
 static void liberarLexema(void * lexema);
 
@@ -762,7 +763,7 @@ static int numero_lineas = 1;
 //      err_cadena      : \".*
 //      err_numero      : ({int_decimal}|{int_octal}|{int_hexa})|{letra}+
 
-#line 766 "salida_compilacion/analizador_lex.yy.c"
+#line 767 "salida_compilacion/analizador_lex.yy.c"
 
 #define INITIAL 0
 
@@ -980,9 +981,9 @@ YY_DECL
 		}
 
 	{
-#line 142 "analizador.l"
+#line 143 "analizador.l"
 
-#line 986 "salida_compilacion/analizador_lex.yy.c"
+#line 987 "salida_compilacion/analizador_lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1042,136 +1043,138 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 143 "analizador.l"
+#line 144 "analizador.l"
 {
-                printf("Se encontró un comentario: %s\n", yytext); }
+                      printf("Se encontró un comentario: %s\n", yytext);
+                      recontar_lineas(yytext); }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 145 "analizador.l"
+#line 147 "analizador.l"
 { numero_lineas++; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 147 "analizador.l"
+#line 149 "analizador.l"
 { printf("Se encontró una cadena: %s\n", yytext);
                       GUARDAR_AMBOS(CADENA); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 149 "analizador.l"
+#line 151 "analizador.l"
 { printf("Se encontró un caracter: %s\n", yytext);
                       GUARDAR_AMBOS(CARACTER);}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 152 "analizador.l"
+#line 154 "analizador.l"
 { printf("Se encontró una palabra reservada: %s\n", yytext);
                       GUARDAR_AMBOS(PALABRA_RESERVADA); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 154 "analizador.l"
+#line 156 "analizador.l"
 { printf("Se encontró un identificador: %s\n", yytext);
                       GUARDAR_AMBOS(IDENTIFICADOR); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 156 "analizador.l"
+#line 158 "analizador.l"
 { printf("Se encontro el simbolo especial \"%s\"\n", yytext);
                       guardar_token(yytext, -1, SIMBOLO_ESPECIAL); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 159 "analizador.l"
+#line 161 "analizador.l"
 { MENSAJE_EMTERO(2);  GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 160 "analizador.l"
+#line 162 "analizador.l"
 { MENSAJE_EMTERO(8);  GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 161 "analizador.l"
+#line 163 "analizador.l"
 { MENSAJE_EMTERO(10); GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 162 "analizador.l"
+#line 164 "analizador.l"
 { MENSAJE_EMTERO(16); GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 163 "analizador.l"
+#line 165 "analizador.l"
 { printf("Se encontró un flotante: %f\n", atof(yytext));
                           GUARDAR_AMBOS(NUMERO_REAL); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 166 "analizador.l"
+#line 168 "analizador.l"
 { printf("Se encontró el operador aritmético: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ARITMETICO); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 168 "analizador.l"
+#line 170 "analizador.l"
 { printf("Se encontró el operador lógico: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_LOGICO); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 170 "analizador.l"
+#line 172 "analizador.l"
 { printf("Se encontró el operador bit a bit: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_BIT_A_BIT); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 172 "analizador.l"
+#line 174 "analizador.l"
 { printf("Se encontró el operador incremental: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_INCREMENTO); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 174 "analizador.l"
+#line 176 "analizador.l"
 { printf("Se encontró el operador de asignación: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ASIGNACION); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 176 "analizador.l"
+#line 178 "analizador.l"
 { printf("Se encontró el operador relacional: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_RELACIONAL); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 179 "analizador.l"
+#line 181 "analizador.l"
 { /* Con los espacios en blanco no se hace nada */ }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 181 "analizador.l"
+#line 183 "analizador.l"
 { fprintf(stderr, "Cadena sin terminar en la línea: %d\n", numero_lineas); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 182 "analizador.l"
+#line 184 "analizador.l"
 { fprintf(stderr, "Valor numérico erroneo %s en la línea %d\n",
                       yytext, numero_lineas); }
 	YY_BREAK
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 184 "analizador.l"
-{ fprintf(stderr, "Comentario sin cerrar en la línea %d\n", numero_lineas); }
+#line 186 "analizador.l"
+{ fprintf(stderr, "Comentario multilinea sin cerrar en la línea %d\n",
+                      numero_lineas); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 186 "analizador.l"
+#line 189 "analizador.l"
 ECHO;
 	YY_BREAK
-#line 1175 "salida_compilacion/analizador_lex.yy.c"
+#line 1178 "salida_compilacion/analizador_lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2172,7 +2175,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 186 "analizador.l"
+#line 189 "analizador.l"
 
 
 
@@ -2290,6 +2293,13 @@ static void crear_tablas(void)
     fclose(archivo);
 }
 
+static void recontar_lineas(char * comentario) {
+    while ( strchr(comentario, '\n') != NULL ) {
+        numero_lineas++;
+        comentario = strchr(comentario, '\n') + 1;
+    }
+}
+
 static int comparar_cadena(const void * cad1, const void * cad2)
 {
     return strcmp(cad1, cad2);
@@ -2312,6 +2322,8 @@ static void liberarToken(void * token)
 
         default: /* No se hace nada si no se asigno memoria para una cadena */;
     }
+
+    free(token);
 }
 
 static void liberarLexema(void * lexema)

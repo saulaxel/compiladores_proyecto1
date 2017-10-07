@@ -44,6 +44,7 @@ static int guardar_simbolo(char * simbolo);
 static void guardar_token(char * simbolo, int posicion, enum clase_token clase);
 static void crear_tablas(void);
 static int comparar_cadena(const void * cad1, const void * cad2);
+static void recontar_lineas(char * comentario);
 static void liberarToken(void * token);
 static void liberarLexema(void * lexema);
 
@@ -141,7 +142,8 @@ salto_linea \n
 %option noyywrap
 %%
 {com_linea}|{com_multilinea} {
-                printf("Se encontró un comentario: %s\n", yytext); }
+                      printf("Se encontró un comentario: %s\n", yytext);
+                      recontar_lineas(yytext); }
 {salto_linea}       { numero_lineas++; }
 
 {cadena}            { printf("Se encontró una cadena: %s\n", yytext);
@@ -300,6 +302,13 @@ static void crear_tablas(void)
     fclose(archivo);
 }
 
+static void recontar_lineas(char * comentario) {
+    while ( strchr(comentario, '\n') != NULL ) {
+        numero_lineas++;
+        comentario = strchr(comentario, '\n') + 1;
+    }
+}
+
 static int comparar_cadena(const void * cad1, const void * cad2)
 {
     return strcmp(cad1, cad2);
@@ -322,6 +331,8 @@ static void liberarToken(void * token)
 
         default: /* No se hace nada si no se asigno memoria para una cadena */;
     }
+
+    free(token);
 }
 
 static void liberarLexema(void * lexema)
