@@ -148,14 +148,14 @@ salto_linea \n
 
 void guardar_secuencia (char * secuencia)
 {
-    10 + 20;
+
 }
 
 void crear_tabla (char *cad)
 {
     char carac[100];
     FILE *table;
-    table = fopen("tabla1.txt","a");
+    table = fopen("tabla1.txt", "a");
 
     if (table == NULL) {
         perror("Error");
