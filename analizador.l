@@ -128,15 +128,19 @@ op_incdec "++"|"--"
 op_asignacion {op_aritmetico}=
 op_relacional "=="|"<"|">"|"<="|">="
 
+com_linea "//".*
+com_multilinea "/*"[^(\*\/)]*"*/"
+
 err_cadena \".*
 err_numero ({int_decimal}|{int_octal}|{int_hexa}){letra}+
+err_comentario "/*"[^(\*\/)]*
 
 espacio [ \t]
 salto_linea \n
 
 %option noyywrap
 %%
-("//".*)|\/\*({espacio}|{letra}|{digito})*\*\/ {
+{com_linea}|{com_multilinea} {
                 printf("Se encontró un comentario: %s\n", yytext); }
 {salto_linea}       { numero_lineas++; }
 
@@ -177,6 +181,8 @@ salto_linea \n
 {err_cadena}        { fprintf(stderr, "Cadena sin terminar en la línea: %d\n", numero_lineas); }
 {err_numero}        { fprintf(stderr, "Valor numérico erroneo %s en la línea %d\n",
                       yytext, numero_lineas); }
+{err_comentario}    { fprintf(stderr, "Comentario multilinea sin cerrar en la línea %d\n",
+                      numero_lineas); }
 
 %%
 
