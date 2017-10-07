@@ -28,9 +28,15 @@ Pila * Pila_Nueva(void)
     return nueva_pila;
 }
 
-void   Pila_Borrar(Pila * p)
+void   Pila_Borrar(Pila * p, void (*funcion_liberadora)(void *))
 {
-    free(p->elementos); // Se borra el contenido
+    if ( funcion_liberadora != NULL ) {
+        for (int pos = 0; pos <= p->tope; pos++) {
+            funcion_liberadora(p->elementos[pos]);
+        }
+    }
+
+    free(p->elementos); // Se borra el arreglo de apuntadores
     free(p);            // Se borra la estructura
 }
 

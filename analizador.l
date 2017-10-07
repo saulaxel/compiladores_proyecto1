@@ -44,6 +44,8 @@ static int guardar_simbolo(char * simbolo);
 static void guardar_token(char * simbolo, int posicion, enum clase_token clase);
 static void crear_tablas(void);
 static int comparar_cadena(const void * cad1, const void * cad2);
+static void liberarToken(void * token);
+static void liberarLexema(void * lexema);
 
 /* ##### Variables de conteo y memoria ##### */
 static Pila * pilaTokens;
@@ -173,7 +175,8 @@ salto_linea \n
 {espacio}+          { /* Con los espacios en blanco no se hace nada */ }
 
 {err_cadena}        { fprintf(stderr, "Cadena sin terminar en la línea: %d\n", numero_lineas); }
-{err_numero}        { fprintf(stderr, "Valor numérico erroneo: %s\n", yytext); }
+{err_numero}        { fprintf(stderr, "Valor numérico erroneo %s en la línea %d\n",
+                      yytext, numero_lineas); }
 
 %%
 
@@ -200,8 +203,8 @@ int main(int argc, const char *argv[])
 
     crear_tablas();
 
-    Pila_Borrar(pilaTokens);
-    Pila_Borrar(pilaSimbolos);
+    Pila_Borrar(pilaTokens, liberarToken);
+    Pila_Borrar(pilaSimbolos, liberarLexema);
 }
 
 static int guardar_simbolo(char * simbolo)
@@ -209,11 +212,13 @@ static int guardar_simbolo(char * simbolo)
     int posicion = Pila_ObtenerPosicion(pilaSimbolos, simbolo, comparar_cadena);
 
     if ( posicion == -1 ) {
-        Pila_Insertar(pilaSimbolos, simbolo);
+        char * a_guardar = malloc(strlen(simbolo) + 1);
+        strcpy(a_guardar, simbolo);
+        Pila_Insertar(pilaSimbolos, a_guardar);
         return pilaSimbolos->tope;
     }
 
-    return posicion;
+    return posicion; // posicion no es -1
 }
 
 static void guardar_token(char * secuencia, int posicion, enum clase_token clase)
@@ -223,7 +228,8 @@ static void guardar_token(char * secuencia, int posicion, enum clase_token clase
     nuevo_token->clase = clase;
 
     if ( posicion == -1 ) {
-        nuevo_token->lexema = secuencia;
+        nuevo_token->lexema = malloc(strlen(secuencia) + 1);
+        strcpy(nuevo_token->lexema, secuencia);
     } else {
         nuevo_token->numero_simbolo = posicion;
     }
@@ -247,6 +253,8 @@ static void crear_tablas(void)
         fprintf(archivo, "%s\n",
                 (char *) pilaSimbolos->elementos[pos]);
     }
+
+    fclose(archivo);
 
     // Creando la tabla de tokens
     archivo = fopen(ARCHIVO_TABLA_TOKENS, "w");
@@ -282,6 +290,8 @@ static void crear_tablas(void)
             } break;
         }
     }
+
+    fclose(archivo);
 }
 
 static int comparar_cadena(const void * cad1, const void * cad2)
@@ -289,3 +299,26 @@ static int comparar_cadena(const void * cad1, const void * cad2)
     return strcmp(cad1, cad2);
 }
 
+static void liberarToken(void * token)
+{
+    struct token * t = token;
+
+    switch ( t->clase ) {
+        case OPERADOR_ARITMETICO:
+        case OPERADOR_LOGICO:
+        case OPERADOR_RELACIONAL:
+        case OPERADOR_BIT_A_BIT:
+        case OPERADOR_INCREMENTO:
+        case OPERADOR_ASIGNACION:
+        case SIMBOLO_ESPECIAL: {
+            free(t->lexema);
+        } break;
+
+        default: /* No se hace nada si no se asigno memoria para una cadena */;
+    }
+}
+
+static void liberarLexema(void * lexema)
+{
+    free(lexema);
+}

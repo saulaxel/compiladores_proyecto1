@@ -22,7 +22,7 @@ struct pila {
 
 /* ##### Prototipos de función ##### */
 Pila * Pila_Nueva(void);
-void   Pila_Borrar(Pila * p);
+void   Pila_Borrar(Pila * p, void (*funcion_liberadora)(void * ptr));
 
 bool Pila_Insertar(Pila * p, void * elemento);
 

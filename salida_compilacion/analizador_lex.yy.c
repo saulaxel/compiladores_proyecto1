@@ -682,8 +682,8 @@ char *yytext;
         strtol(yytext, NULL, (base)), (base))
 #define GUARDAR_AMBOS(_tipo) guardar_token(yytext, guardar_simbolo(yytext), (_tipo))
 
-#define ARCHIVO_TABLA_SIMBOLOS "tabla_simbolos.dat"
-#define ARCHIVO_TABLA_TOKENS   "tabla_tokens.dat"
+#define ARCHIVO_TABLA_SIMBOLOS "salida_programa/tabla_simbolos.dat"
+#define ARCHIVO_TABLA_TOKENS   "salida_programa/tabla_tokens.dat"
 
 enum clase_token {
     PALABRA_RESERVADA, IDENTIFICADOR,
@@ -708,6 +708,8 @@ static int guardar_simbolo(char * simbolo);
 static void guardar_token(char * simbolo, int posicion, enum clase_token clase);
 static void crear_tablas(void);
 static int comparar_cadena(const void * cad1, const void * cad2);
+static void liberarToken(void * token);
+static void liberarLexema(void * lexema);
 
 /* ##### Variables de conteo y memoria ##### */
 static Pila * pilaTokens;
@@ -760,7 +762,7 @@ static int numero_lineas = 1;
 //      err_cadena      : \".*
 //      err_numero      : ({int_decimal}|{int_octal}|{int_hexa})|{letra}+
 
-#line 764 "salida_compilacion/analizador_lex.yy.c"
+#line 766 "salida_compilacion/analizador_lex.yy.c"
 
 #define INITIAL 0
 
@@ -978,9 +980,9 @@ YY_DECL
 		}
 
 	{
-#line 136 "analizador.l"
+#line 138 "analizador.l"
 
-#line 984 "salida_compilacion/analizador_lex.yy.c"
+#line 986 "salida_compilacion/analizador_lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1039,129 +1041,130 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 137 "analizador.l"
+#line 139 "analizador.l"
 {
                 printf("Se encontró un comentario: %s\n", yytext); }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 139 "analizador.l"
+#line 141 "analizador.l"
 { numero_lineas++; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 141 "analizador.l"
+#line 143 "analizador.l"
 { printf("Se encontró una cadena: %s\n", yytext);
                       GUARDAR_AMBOS(CADENA); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 143 "analizador.l"
+#line 145 "analizador.l"
 { printf("Se encontró un caracter: %s\n", yytext);
                       GUARDAR_AMBOS(CARACTER);}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 146 "analizador.l"
+#line 148 "analizador.l"
 { printf("Se encontró una palabra reservada: %s\n", yytext);
                       GUARDAR_AMBOS(PALABRA_RESERVADA); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 148 "analizador.l"
+#line 150 "analizador.l"
 { printf("Se encontró un identificador: %s\n", yytext);
                       GUARDAR_AMBOS(IDENTIFICADOR); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 150 "analizador.l"
+#line 152 "analizador.l"
 { printf("Se encontro el simbolo especial \"%s\"\n", yytext);
                       guardar_token(yytext, -1, SIMBOLO_ESPECIAL); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 153 "analizador.l"
+#line 155 "analizador.l"
 { MENSAJE_EMTERO(2);  GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 154 "analizador.l"
+#line 156 "analizador.l"
 { MENSAJE_EMTERO(8);  GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 155 "analizador.l"
+#line 157 "analizador.l"
 { MENSAJE_EMTERO(10); GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 156 "analizador.l"
+#line 158 "analizador.l"
 { MENSAJE_EMTERO(16); GUARDAR_AMBOS(NUMERO_ENTERO); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 157 "analizador.l"
+#line 159 "analizador.l"
 { printf("Se encontró un flotante: %f\n", atof(yytext));
                           GUARDAR_AMBOS(NUMERO_REAL); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 160 "analizador.l"
+#line 162 "analizador.l"
 { printf("Se encontró el operador aritmético: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ARITMETICO); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 162 "analizador.l"
+#line 164 "analizador.l"
 { printf("Se encontró el operador lógico: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_LOGICO); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 164 "analizador.l"
+#line 166 "analizador.l"
 { printf("Se encontró el operador bit a bit: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_BIT_A_BIT); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 166 "analizador.l"
+#line 168 "analizador.l"
 { printf("Se encontró el operador incremental: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_INCREMENTO); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 168 "analizador.l"
+#line 170 "analizador.l"
 { printf("Se encontró el operador de asignación: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ASIGNACION); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 170 "analizador.l"
+#line 172 "analizador.l"
 { printf("Se encontró el operador relacional: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_RELACIONAL); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 173 "analizador.l"
+#line 175 "analizador.l"
 { /* Con los espacios en blanco no se hace nada */ }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 175 "analizador.l"
+#line 177 "analizador.l"
 { fprintf(stderr, "Cadena sin terminar en la línea: %d\n", numero_lineas); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 176 "analizador.l"
-{ fprintf(stderr, "Valor numérico erroneo: %s\n", yytext); }
+#line 178 "analizador.l"
+{ fprintf(stderr, "Valor numérico erroneo %s en la línea %d\n",
+                      yytext, numero_lineas); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 178 "analizador.l"
+#line 181 "analizador.l"
 ECHO;
 	YY_BREAK
-#line 1165 "salida_compilacion/analizador_lex.yy.c"
+#line 1168 "salida_compilacion/analizador_lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2162,7 +2165,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 178 "analizador.l"
+#line 181 "analizador.l"
 
 
 
@@ -2189,8 +2192,8 @@ int main(int argc, const char *argv[])
 
     crear_tablas();
 
-    Pila_Borrar(pilaTokens);
-    Pila_Borrar(pilaSimbolos);
+    Pila_Borrar(pilaTokens, liberarToken);
+    Pila_Borrar(pilaSimbolos, liberarLexema);
 }
 
 static int guardar_simbolo(char * simbolo)
@@ -2198,11 +2201,13 @@ static int guardar_simbolo(char * simbolo)
     int posicion = Pila_ObtenerPosicion(pilaSimbolos, simbolo, comparar_cadena);
 
     if ( posicion == -1 ) {
-        Pila_Insertar(pilaSimbolos, simbolo);
+        char * a_guardar = malloc(strlen(simbolo) + 1);
+        strcpy(a_guardar, simbolo);
+        Pila_Insertar(pilaSimbolos, a_guardar);
         return pilaSimbolos->tope;
     }
 
-    return posicion;
+    return posicion; // posicion no es -1
 }
 
 static void guardar_token(char * secuencia, int posicion, enum clase_token clase)
@@ -2212,7 +2217,8 @@ static void guardar_token(char * secuencia, int posicion, enum clase_token clase
     nuevo_token->clase = clase;
 
     if ( posicion == -1 ) {
-        nuevo_token->lexema = secuencia;
+        nuevo_token->lexema = malloc(strlen(secuencia) + 1);
+        strcpy(nuevo_token->lexema, secuencia);
     } else {
         nuevo_token->numero_simbolo = posicion;
     }
@@ -2237,6 +2243,8 @@ static void crear_tablas(void)
                 (char *) pilaSimbolos->elementos[pos]);
     }
 
+    fclose(archivo);
+
     // Creando la tabla de tokens
     archivo = fopen(ARCHIVO_TABLA_TOKENS, "w");
 
@@ -2255,7 +2263,6 @@ static void crear_tablas(void)
             case NUMERO_REAL:
             case CADENA:
             case CARACTER: {
-                printf("actual %p\n");
                 fprintf(archivo, "%d\t%d\n",
                         actual->clase, actual->numero_simbolo);
             } break;
@@ -2267,12 +2274,13 @@ static void crear_tablas(void)
             case OPERADOR_INCREMENTO:
             case OPERADOR_ASIGNACION:
             case SIMBOLO_ESPECIAL: {
-                printf("actual %p\n");
                 fprintf(archivo, "%d\t%s\n",
                         actual->clase, (char *)actual->lexema);
             } break;
         }
     }
+
+    fclose(archivo);
 }
 
 static int comparar_cadena(const void * cad1, const void * cad2)
@@ -2280,4 +2288,27 @@ static int comparar_cadena(const void * cad1, const void * cad2)
     return strcmp(cad1, cad2);
 }
 
+static void liberarToken(void * token)
+{
+    struct token * t = token;
+
+    switch ( t->clase ) {
+        case OPERADOR_ARITMETICO:
+        case OPERADOR_LOGICO:
+        case OPERADOR_RELACIONAL:
+        case OPERADOR_BIT_A_BIT:
+        case OPERADOR_INCREMENTO:
+        case OPERADOR_ASIGNACION:
+        case SIMBOLO_ESPECIAL: {
+            free(t->lexema);
+        } break;
+
+        default: /* No se hace nada si no se asigno memoria para una cadena */;
+    }
+}
+
+static void liberarLexema(void * lexema)
+{
+    free(lexema);
+}
 
