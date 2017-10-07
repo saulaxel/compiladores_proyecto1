@@ -18,8 +18,8 @@
         strtol(yytext, NULL, (base)), (base))
 #define GUARDAR_AMBOS(_tipo) guardar_token(yytext, guardar_simbolo(yytext), (_tipo))
 
-#define ARCHIVO_TABLA_SIMBOLOS "tabla_simbolos.dat"
-#define ARCHIVO_TABLA_TOKENS   "tabla_tokens.dat"
+#define ARCHIVO_TABLA_SIMBOLOS "salida_programa/tabla_simbolos.dat"
+#define ARCHIVO_TABLA_TOKENS   "salida_programa/tabla_tokens.dat"
 
 enum clase_token {
     PALABRA_RESERVADA, IDENTIFICADOR,
