@@ -1,4 +1,5 @@
 *.exe
 *.out
-output
 analizador
+salida_compilacion/
+salida_programa/
