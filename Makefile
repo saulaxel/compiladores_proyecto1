@@ -8,7 +8,7 @@ CC = gcc
 FC = flex
 
 # Banderas
-CFLAGS = -std=gnu11 -Wall -Wextra -O3 -Wno-unused-parameters -Wno-sign-compare -Wno-unused-function -I.
+CFLAGS = -std=gnu11 -Wall -Wextra -O3 -Wno-unused-parameters -Wno-sign-compare -Wno-unused-function -I. -D NDEBUG
 
 analizador: salida_compilacion/analizador_lex.yy.o salida_compilacion/pila.o
 	$(CC) -o $@ $^ $(CFLAGS)

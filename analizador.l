@@ -12,6 +12,12 @@
 #include <string.h>
 #include "pila.h"
 
+#ifndef NDEBUG
+#   define MENSAJE printf
+#else
+#   define MENSAJE(...)
+#endif
+
 /* ##### Definiciones ##### */
 
 #define MENSAJE_EMTERO(base) printf("Se ha encontrado el entero %ld que estaba en base %d\n",\
@@ -20,6 +26,22 @@
 
 #define ARCHIVO_TABLA_SIMBOLOS "salida_programa/tabla_simbolos.dat"
 #define ARCHIVO_TABLA_TOKENS   "salida_programa/tabla_tokens.dat"
+
+/* Clases de token
+ * 0 -> palabra reservada
+ * 1 -> identificador
+ * 2 -> numero entero
+ * 3 -> numero real
+ * 4 -> operador aritmético
+ * 5 -> operador lógico
+ * 6 -> operador relacional
+ * 7 -> operador bit a bit
+ * 8 -> operador incremento
+ * 9 -> operador asignación
+ * 10-> cadena
+ * 11-> carácter
+ * 12-> simbolo especial
+ */
 
 enum clase_token {
     PALABRA_RESERVADA, IDENTIFICADOR,
@@ -126,15 +148,15 @@ op_aritmetico "+"|"-"|"*"|"/"
 op_logico "&&"|"||"|"!"
 op_bit "&"|"|"|"^"|"<<"|">>"
 op_incdec "++"|"--"
-op_asignacion {op_aritmetico}=
+op_asignacion ({op_aritmetico}|{op_bit})?=
 op_relacional "=="|"<"|">"|"<="|">="
 
 com_linea "//".*
-com_multilinea "/*"[^(\*\/)]*"*/"
+com_multilinea "/*"[^/]*"*/"
 
 err_cadena \".*
 err_numero ({int_decimal}|{int_octal}|{int_hexa}){letra}+
-err_comentario "/*"[^(\*\/)]*
+err_comentario "/*"[^(\*\/)]*?
 
 espacio [ \t]
 salto_linea \n
@@ -142,20 +164,20 @@ salto_linea \n
 %option noyywrap
 %%
 {com_linea}|{com_multilinea} {
-                      printf("Se encontró un comentario: %s\n", yytext);
+                      MENSAJE("Se encontró un comentario:\n%s\n", yytext);
                       recontar_lineas(yytext); }
 {salto_linea}       { numero_lineas++; }
 
-{cadena}            { printf("Se encontró una cadena: %s\n", yytext);
+{cadena}            { MENSAJE("Se encontró una cadena: %s\n", yytext);
                       GUARDAR_AMBOS(CADENA); }
-{caracter}          { printf("Se encontró un caracter: %s\n", yytext);
+{caracter}          { MENSAJE("Se encontró un caracter: %s\n", yytext);
                       GUARDAR_AMBOS(CARACTER);}
 
-{palabra_reservada} { printf("Se encontró una palabra reservada: %s\n", yytext);
+{palabra_reservada} { MENSAJE("Se encontró una palabra reservada: %s\n", yytext);
                       GUARDAR_AMBOS(PALABRA_RESERVADA); }
-{identificador}     { printf("Se encontró un identificador: %s\n", yytext);
+{identificador}     { MENSAJE("Se encontró un identificador: %s\n", yytext);
                       GUARDAR_AMBOS(IDENTIFICADOR); }
-{caracter_especial} { printf("Se encontro el simbolo especial \"%s\"\n", yytext);
+{caracter_especial} { MENSAJE("Se encontro el simbolo especial \"%s\"\n", yytext);
                       guardar_token(yytext, -1, SIMBOLO_ESPECIAL); }
 
 {int_bin}           { MENSAJE_EMTERO(2);  GUARDAR_AMBOS(NUMERO_ENTERO); }
@@ -165,17 +187,17 @@ salto_linea \n
 {flt_decimal}|{flt_exp} { printf("Se encontró un flotante: %f\n", atof(yytext));
                           GUARDAR_AMBOS(NUMERO_REAL); }
 
-{op_aritmetico}     { printf("Se encontró el operador aritmético: \"%s\"\n", yytext);
+{op_aritmetico}     { MENSAJE("Se encontró el operador aritmético: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ARITMETICO); }
-{op_logico}         { printf("Se encontró el operador lógico: \"%s\"\n", yytext);
+{op_logico}         { MENSAJE("Se encontró el operador lógico: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_LOGICO); }
-{op_bit}            { printf("Se encontró el operador bit a bit: \"%s\"\n", yytext);
+{op_bit}            { MENSAJE("Se encontró el operador bit a bit: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_BIT_A_BIT); }
-{op_incdec}         { printf("Se encontró el operador incremental: \"%s\"\n", yytext);
+{op_incdec}         { MENSAJE("Se encontró el operador incremental: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_INCREMENTO); }
-{op_asignacion}     { printf("Se encontró el operador de asignación: \"%s\"\n", yytext);
+{op_asignacion}     { MENSAJE("Se encontró el operador de asignación: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_ASIGNACION); }
-{op_relacional}     { printf("Se encontró el operador relacional: \"%s\"\n", yytext);
+{op_relacional}     { MENSAJE("Se encontró el operador relacional: \"%s\"\n", yytext);
                       guardar_token(yytext, -1, OPERADOR_RELACIONAL); }
 
 {espacio}+          { /* Con los espacios en blanco no se hace nada */ }
